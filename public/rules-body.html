@@ -7,7 +7,7 @@
 <pre><code>买家 - 商品 - 数量 - 单价 - 付款</code></pre>
 <p><strong>用短横线 <code>-</code> 分隔</strong>（前后加空格更好读）</p>
 <h2 id="s8" class="section-anchor">二、五个字段怎么写</h2>
-<div class="table-scroll"><table><thead><tr><th>字段</th><th>怎么填</th><th>例子</th><th>说明</th></tr></thead><tbody><tr><td><strong>买家</strong></td><td>越南语原名</td><td><code>Trang Lê</code></td><td>别写「宝」「姐」这类称呼，写全名</td></tr><tr><td><strong>商品</strong></td><td>简称</td><td><code>十刻401晚秋</code></td><td>见下方对照表，不用写全称</td></tr><tr><td><strong>数量</strong></td><td>N团</td><td><code>2团</code></td><td>一定是「数字+团」</td></tr><tr><td><strong>单价</strong></td><td>一团多少钱</td><td><code>295000</code></td><td>越南盾，<strong>不写点号、不写总额</strong></td></tr><tr><td><strong>付款</strong></td><td>已付X 或 全款</td><td><code>已付295000</code></td><td>不写 = 未付款</td></tr></tbody></table></div>
+<div class="table-scroll"><table><thead><tr><th>字段</th><th>怎么填</th><th>例子</th><th>说明</th></tr></thead><tbody><tr><td><strong>买家</strong></td><td>越南语原名</td><td><code>Trang Lê</code></td><td>别写「宝」「姐」这类称呼，写全名</td></tr><tr><td><strong>商品</strong></td><td>简称</td><td><code>十刻401晚秋</code></td><td>见下方对照表，不用写全称；表里没有的可在网站手动填品牌+商品+色号</td></tr><tr><td><strong>数量</strong></td><td>N团</td><td><code>2团</code></td><td>一定是「数字+团」</td></tr><tr><td><strong>单价</strong></td><td>一团多少钱</td><td><code>295000</code></td><td>越南盾，<strong>不写点号、不写总额</strong></td></tr><tr><td><strong>付款</strong></td><td>已付X 或 全款</td><td><code>已付295000</code></td><td>不写 = 未付款</td></tr></tbody></table></div>
 <h2 id="s10" class="section-anchor">三、完整示例</h2>
 <pre><code>【下单】2026-11-12
 Trang Lê - 十刻401晚秋 - 2团 - 295000 - 已付295000
@@ -50,30 +50,31 @@ Trang Lê - 十刻401晚秋 - 2团 - 295000 - 已付295000</code></pre>
 <p><strong>Q：客户退货怎么办？</strong></p>
 <p>作废那条，然后告诉我一声「退货」。我在 Excel 里用负数数量处理。</p>
 <p><strong>Q：商品表里没有怎么办？</strong></p>
-<p>先告诉我，我在【商品资料】里加，然后给你简称。</p>
+<p>在网站开单页点商品 → 切到「手动输入」，填<strong>品牌 / 商品 / 色号颜色</strong>，照样能生成文案发群。</p>
+<p>同时告诉我一声，我在【商品资料】里加，以后就能直接从列表选（简称对得上，导入不会报「商品未匹配」）。</p>
 <p><strong>Q：12团装那种怎么算？</strong></p>
 <p><code>羊绒43</code> 是 12 团装，按<strong>套</strong>卖：</p>
 <pre><code>Thuỳ Dương - 羊绒43 - 12团 - 1135000 - 已付250000</code></pre>
 <p>金额 = <strong>1 套 × 1,135,000</strong>，不是 12 × 1,135,000。</p>
 <p>系统会自动识别，你照常写 12团 就行。</p>
-<h2 id="s46" class="section-anchor">八、商品简称对照表</h2>
-<h3 id="s47" class="section-anchor">十刻雪宝星系列</h3>
+<h2 id="s47" class="section-anchor">八、商品简称对照表</h2>
+<h3 id="s48" class="section-anchor">十刻雪宝星系列</h3>
 <div class="table-scroll"><table><thead><tr><th>简称</th><th>说明</th></tr></thead><tbody><tr><td><code>十刻401晚秋</code></td><td>401 晚秋</td></tr><tr><td><code>十刻402独角兽</code></td><td>402 独角兽</td></tr><tr><td><code>十刻403星月夜</code></td><td>403 星月夜</td></tr><tr><td><code>十刻404橘子海</code></td><td>404 橘子海</td></tr><tr><td><code>十刻405小森林</code></td><td>405 小森林</td></tr></tbody></table></div>
-<h3 id="s49" class="section-anchor">梵森雪宝星（300g 带环形针）</h3>
+<h3 id="s50" class="section-anchor">梵森雪宝星（300g 带环形针）</h3>
 <div class="table-scroll"><table><thead><tr><th>简称</th><th>说明</th></tr></thead><tbody><tr><td><code>梵森02独角兽</code></td><td>02 独角兽</td></tr><tr><td><code>梵森03星月夜</code></td><td>03 星月夜</td></tr><tr><td><code>梵森05小森林</code></td><td>05 小森林</td></tr></tbody></table></div>
-<h3 id="s51" class="section-anchor">梵森雪宝绒</h3>
+<h3 id="s52" class="section-anchor">梵森雪宝绒</h3>
 <div class="table-scroll"><table><thead><tr><th>简称</th><th>色号</th></tr></thead><tbody><tr><td><code>雪宝绒51</code></td><td>51 深海幽蓝</td></tr><tr><td><code>雪宝绒53</code></td><td>53 加州日落</td></tr><tr><td><code>雪宝绒54</code></td><td>54 忘川河畔</td></tr><tr><td><code>雪宝绒55</code></td><td>55 海盐少女</td></tr><tr><td><code>雪宝绒57</code></td><td>57 墨染山水</td></tr><tr><td><code>雪宝绒58</code></td><td>58 月光宝盒</td></tr><tr><td><code>雪宝绒66</code></td><td>66 半塘暖橘</td></tr></tbody></table></div>
-<h3 id="s53" class="section-anchor">澳芙羊绒线</h3>
+<h3 id="s54" class="section-anchor">澳芙羊绒线</h3>
 <div class="table-scroll"><table><thead><tr><th>简称</th><th>色号</th></tr></thead><tbody><tr><td><code>羊绒17</code></td><td>17 浅灰色</td></tr><tr><td><code>羊绒18</code></td><td>18 中灰色</td></tr><tr><td><code>羊绒22</code></td><td>22 浅粉色</td></tr><tr><td><code>羊绒24</code></td><td>24 樱花粉</td></tr><tr><td><code>羊绒25</code></td><td>25 粉白花</td></tr><tr><td><code>羊绒26</code></td><td>26 橡皮红</td></tr><tr><td><code>羊绒32</code></td><td>32 玫红色</td></tr><tr><td><code>羊绒39</code></td><td>39 冰蓝色</td></tr><tr><td><code>羊绒43</code></td><td>43 雾蓝花（12团装，按套卖）</td></tr></tbody></table></div>
-<h3 id="s55" class="section-anchor">诚信编织</h3>
+<h3 id="s56" class="section-anchor">诚信编织</h3>
 <div class="table-scroll"><table><thead><tr><th>简称</th><th>说明</th></tr></thead><tbody><tr><td><code>290浅蓝216</code></td><td>290 中粗羊毛线 浅蓝 216</td></tr><tr><td><code>290浅豆绿212</code></td><td>290 中粗羊毛线 浅豆绿 212</td></tr><tr><td><code>雪球04</code></td><td>雪球冰条线 04 浅粉色</td></tr></tbody></table></div>
-<h3 id="s57" class="section-anchor">煜羊渐变纱线</h3>
+<h3 id="s58" class="section-anchor">煜羊渐变纱线</h3>
 <div class="table-scroll"><table><thead><tr><th>简称</th><th>色号</th></tr></thead><tbody><tr><td><code>渐变02</code></td><td>02 海盐芝士</td></tr><tr><td><code>渐变03</code></td><td>03 桃桃莓莓</td></tr></tbody></table></div>
-<h3 id="s59" class="section-anchor">煜羊琉璃轻岚（长绒羽毛纱）</h3>
+<h3 id="s60" class="section-anchor">煜羊琉璃轻岚（长绒羽毛纱）</h3>
 <p><code>琉璃02</code> <code>琉璃03</code> <code>琉璃05</code> <code>琉璃06</code> <code>琉璃08</code> <code>琉璃09</code><br /><code>琉璃10</code> <code>琉璃11</code> <code>琉璃12</code> <code>琉璃13</code> <code>琉璃14</code> <code>琉璃24</code></p>
-<h2 id="s61" class="section-anchor">九、每天流程</h2>
+<h2 id="s62" class="section-anchor">九、每天流程</h2>
 <ol><li><strong>发单</strong>：按上面格式发【下单】消息</li><li><strong>改单</strong>：作废 + 重发，或引用 + 更正</li><li><strong>导入</strong>：发完跟我说「导入」</li><li><strong>核对</strong>：我导出核对清单，你确认后定稿</li></ol>
-<h2 id="s63" class="section-anchor">十、当前库存快照（2026-11-12）</h2>
+<h2 id="s64" class="section-anchor">十、当前库存快照（2026-11-12）</h2>
 <p><strong>还有货的：</strong></p>
 <div class="table-scroll"><table><thead><tr><th>商品</th><th class="num">剩余</th></tr></thead><tbody><tr><td>十刻402独角兽</td><td class="num">9 团</td></tr><tr><td>十刻403星月夜</td><td class="num">5 团</td></tr><tr><td>十刻401晚秋</td><td class="num">4 团</td></tr><tr><td>十刻405小森林</td><td class="num">4 团</td></tr><tr><td>十刻404橘子海</td><td class="num">2 团</td></tr><tr><td>梵森02独角兽</td><td class="num">1 团</td></tr><tr><td>雪球04</td><td class="num">1 团</td></tr></tbody></table></div>
 <p><strong>已售罄</strong>：其余全部（含所有羊绒、琉璃、雪宝绒）</p>

@@ -121,13 +121,53 @@
 <div class="sheet" id="sheet" hidden>
   <div class="sheet-panel">
     <div class="sheet-head">
-      <b>选商品</b>
+      <b id="sheetTitle">选商品</b>
       <button type="button" id="sheetClose">关闭</button>
     </div>
-    <input type="search" id="sheetSearch" placeholder="搜简称或色号，如 401 / 羊绒 / 琉璃" />
-    <div class="picker-list" id="pickerList"></div>
+
+    <div class="seg sheet-tabs" id="sheetTabs">
+      <button type="button" data-mode="list" class="on">从列表选</button>
+      <button type="button" data-mode="manual">手动输入</button>
+    </div>
+
+    <div id="modeList" class="mode-pane">
+      <input type="search" id="sheetSearch" placeholder="搜简称或色号，如 401 / 羊绒 / 琉璃" />
+      <div class="picker-list" id="pickerList"></div>
+    </div>
+
+    <div id="modeManual" class="mode-pane" hidden>
+      <div class="manual-body">
+        <label class="field">
+          <span class="label">品牌 <em>列表里没有的商品才用这里</em></span>
+          <input type="text" id="mBrand" list="brandList" placeholder="梵森 / 十刻 / 澳芙…" autocomplete="off" />
+        </label>
+        <label class="field">
+          <span class="label">商品</span>
+          <input type="text" id="mProduct" placeholder="雪宝星300克 / 羊绒线…" autocomplete="off" />
+        </label>
+        <label class="field">
+          <span class="label">色号 / 颜色</span>
+          <input type="text" id="mColor" placeholder="03 星月夜 / 216 浅蓝…" autocomplete="off" />
+        </label>
+
+        <div class="manual-preview">
+          <span class="note">会写成这个商品名</span>
+          <b id="mPreview">—</b>
+        </div>
+
+        <button class="btn primary block" id="manualOk" type="button">用这个商品</button>
+
+        <div class="note" style="margin-top:9px;line-height:1.6">
+          三项只填一项也行。列表里有的商品尽量从列表选 —— 简称对得上，导入时不会报「商品未匹配」。
+        </div>
+
+        <div class="recent-manual" id="recentManual"></div>
+      </div>
+    </div>
   </div>
 </div>
+
+<datalist id="brandList"></datalist>
 
 <script src="common.js"></script>
 <script src="products.js"></script>
@@ -196,7 +236,7 @@
       </label>
 
       <div class="field">
-        <span class="label">商品 <em>点开选，别手打</em></span>
+        <span class="label">商品 <em>点开选；列表里没有就手动输入</em></span>
         <button class="product-btn" data-pick type="button">
           <span class="pname">点这里选商品</span>
           <span class="caret">▾</span>
@@ -264,7 +304,7 @@
     rowsEl.appendChild(el);
     paintSeg(el);
 
-    const r = { id, el, product: (data && data.product) || "" };
+    const r = { id, el, product: (data && data.product) || "", manual: false };
     rows.push(r);
 
     if (data) {
@@ -273,7 +313,10 @@
       el.querySelector('[data-f="price"]').value = data.price || "";
       el.querySelector('[data-f="paid"]').value = data.paid || "";
       el.querySelector(".paid-wrap").hidden = el.dataset.pay !== "part";
-      if (r.product) setProduct(r, r.product, true);
+      if (r.product) {
+        if (data.manual) setManual(r, r.product, true);
+        else setProduct(r, r.product, true);
+      }
     }
     return r;
   }
@@ -304,6 +347,7 @@
   function setProduct(r, short, silent) {
     const it = BY_SHORT[short];
     r.product = short;
+    r.manual = false;
     const btn = r.el.querySelector("[data-pick]");
     const nameEl = btn.querySelector(".pname");
     if (it) {
@@ -335,12 +379,45 @@
     if (!silent) update();
   }
 
+  /* 手动输入的商品（列表里没有的新货） */
+  function setManual(r, name, silent) {
+    name = (name || "").trim();
+    r.product = name;
+    r.manual = !!name;
+    const btn = r.el.querySelector("[data-pick]");
+    const nameEl = btn.querySelector(".pname");
+    if (name) {
+      btn.classList.add("has");
+      nameEl.innerHTML =
+        esc(name) +
+        ' <small style="color:#b8642f;font-weight:400">· 手填</small>';
+    } else {
+      btn.classList.remove("has");
+      nameEl.textContent = "点这里选商品";
+    }
+    let b = btn.parentElement.querySelector(".stock-badge");
+    if (name) {
+      if (!b) {
+        b = document.createElement("div");
+        b.className = "stock-badge";
+        b.style.marginTop = "6px";
+        btn.parentElement.appendChild(b);
+      }
+      b.innerHTML = '<span class="badge manual">列表里没有 · 请老板加进商品表</span>';
+    } else if (b) {
+      b.remove();
+    }
+    if (!silent) update();
+  }
+
+
   /* ---------- 取值 ---------- */
   function readRow(r) {
     const el = r.el;
     return {
       buyer: el.querySelector('[data-f="buyer"]').value.trim(),
       product: r.product,
+      manual: !!r.manual,
       qty: digits(el.querySelector('[data-f="qty"]').value),
       price: digits(el.querySelector('[data-f="price"]').value),
       pay: el.dataset.pay || "none",
@@ -415,6 +492,11 @@
       if (d.pay === "part" && !d.paid) {
         warns.push("第 " + (i + 1) + " 件选了「已付」但没填金额");
       }
+      if (d.manual) {
+        warns.push(
+          "第 " + (i + 1) + " 件「" + d.product + "」是手填的，导入时可能对不上，记得让老板加进商品表"
+        );
+      }
 
       // 行内小计
       const amt = amountOf(d);
@@ -478,11 +560,98 @@
   const sheet = document.getElementById("sheet");
   const listEl = document.getElementById("pickerList");
   const searchEl = document.getElementById("sheetSearch");
+  const modeListEl = document.getElementById("modeList");
+  const modeManualEl = document.getElementById("modeManual");
+  const mBrand = document.getElementById("mBrand");
+  const mProduct = document.getElementById("mProduct");
+  const mColor = document.getElementById("mColor");
+  const mPreview = document.getElementById("mPreview");
+  const recentEl = document.getElementById("recentManual");
+
+  const MANUAL_KEY = "xd_manual_v1";
+
+  function getManuals() {
+    try {
+      return JSON.parse(localStorage.getItem(MANUAL_KEY) || "[]");
+    } catch (e) {
+      return [];
+    }
+  }
+  function rememberManual(name) {
+    name = (name || "").trim();
+    if (!name) return;
+    let list = getManuals().filter((x) => x !== name);
+    list.unshift(name);
+    localStorage.setItem(MANUAL_KEY, JSON.stringify(list.slice(0, 12)));
+  }
+
+  function setMode(mode) {
+    document.querySelectorAll("#sheetTabs [data-mode]").forEach((b) =>
+      b.classList.toggle("on", b.dataset.mode === mode)
+    );
+    modeListEl.hidden = mode !== "list";
+    modeManualEl.hidden = mode !== "manual";
+    document.getElementById("sheetTitle").textContent =
+      mode === "manual" ? "手动输入商品" : "选商品";
+    if (mode === "manual") setTimeout(() => mBrand.focus(), 60);
+  }
+
+  /* 手动输入的品牌 + 商品 + 色号 → 商品名 */
+  function manualName() {
+    const brand = mBrand.value.trim();
+    const prod = mProduct.value.trim();
+    const color = mColor.value.trim();
+    // 商品名里已经带品牌就不再重复（「彤达100羊毛」+ 品牌「彤达」）
+    const head = brand && prod.indexOf(brand) === 0 ? prod : brand + prod;
+    if (head && color) return head + " " + color;
+    return head || color;
+  }
+
+  function paintManual() {
+    const name = manualName();
+    mPreview.textContent = name || "—";
+    document.getElementById("manualOk").disabled = !name;
+  }
+
+  function renderRecentManual() {
+    const list = getManuals();
+    if (!list.length) {
+      recentEl.innerHTML = "";
+      return;
+    }
+    recentEl.innerHTML =
+      '<div class="recent-title">最近手填过</div>' +
+      list
+        .map(
+          (n) =>
+            '<button class="chip" type="button" data-recent="' +
+            esc(n) +
+            '">' +
+            esc(n) +
+            "</button>"
+        )
+        .join("");
+    recentEl.querySelectorAll("[data-recent]").forEach((b) =>
+      b.addEventListener("click", () => {
+        if (pickTarget) {
+          setManual(pickTarget, b.dataset.recent);
+          rememberManual(b.dataset.recent);
+          closePicker();
+        }
+      })
+    );
+  }
 
   function openPicker(id) {
     pickTarget = rows.find((r) => r.id === id) || null;
     searchEl.value = "";
+    mBrand.value = "";
+    mProduct.value = "";
+    mColor.value = "";
+    paintManual();
     renderPicker("");
+    renderRecentManual();
+    setMode("list");
     sheet.hidden = false;
     document.body.style.overflow = "hidden";
     setTimeout(() => searchEl.focus(), 60);
@@ -528,7 +697,13 @@
           "</span></button>";
       });
     });
-    if (!total) html = '<div class="empty">没找到，换个词试试<br />（没有的商品先告诉老板加）</div>';
+    if (!total) {
+      html =
+        '<div class="empty">列表里没有这个商品<br />' +
+        '<button class="btn primary small" id="goManual" type="button" style="margin-top:12px">' +
+        (kw ? "手动输入「" + esc(q.trim()) + "」" : "手动输入商品") +
+        "</button></div>";
+    }
     listEl.innerHTML = html;
     listEl.querySelectorAll(".picker-item").forEach((b) =>
       b.addEventListener("click", () => {
@@ -536,9 +711,49 @@
         closePicker();
       })
     );
+    const goManual = document.getElementById("goManual");
+    if (goManual) {
+      goManual.addEventListener("click", () => {
+        const kwText = q.trim();
+        mProduct.value = "";
+        mBrand.value = "";
+        mColor.value = "";
+        if (kwText) mProduct.value = kwText;
+        paintManual();
+        setMode("manual");
+      });
+    }
   }
 
   searchEl.addEventListener("input", () => renderPicker(searchEl.value));
+
+  document.querySelectorAll("#sheetTabs [data-mode]").forEach((b) =>
+    b.addEventListener("click", () => setMode(b.dataset.mode))
+  );
+
+  [mBrand, mProduct, mColor].forEach((inp) => {
+    inp.addEventListener("input", paintManual);
+    inp.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        document.getElementById("manualOk").click();
+      }
+    });
+  });
+
+  document.getElementById("manualOk").addEventListener("click", () => {
+    const name = manualName();
+    if (!name) {
+      toast("至少填一项：品牌 / 商品 / 色号");
+      return;
+    }
+    if (pickTarget) {
+      setManual(pickTarget, name);
+      rememberManual(name);
+    }
+    closePicker();
+  });
+
   document.getElementById("sheetClose").addEventListener("click", closePicker);
   sheet.addEventListener("click", (e) => {
     if (e.target === sheet) closePicker();
@@ -638,10 +853,19 @@
       .join("");
   }
 
+  /* ---------- 品牌候选（从商品表收集） ---------- */
+  function renderBrandList() {
+    const dl = document.getElementById("brandList");
+    dl.innerHTML = window.PRODUCTS.map(
+      (g) => '<option value="' + esc(g.series) + '"></option>'
+    ).join("");
+  }
+
   /* ---------- 启动 ---------- */
   const draft = loadDraft();
   dateEl.value = (draft && draft.date) || todayISO();
   renderBuyerList();
+  renderBrandList();
 
   if (draft && draft.rows && draft.rows.length) {
     draft.rows.forEach((d) => makeRow(d));

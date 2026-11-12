@@ -276,6 +276,7 @@ input::placeholder { color: #b9aca5; }
 .badge.ok { background: var(--ok-soft); color: var(--ok); }
 .badge.out { background: #f0ece9; color: #8d7f78; }
 .badge.over { background: var(--danger-soft); color: var(--danger); }
+.badge.manual { background: #fdf0e3; color: #b8642f; }
 
 /* ---------- buttons ---------- */
 .btn {
@@ -429,6 +430,47 @@ input::placeholder { color: #b9aca5; }
 .pi-main small { font-size: 12px; color: var(--muted); }
 
 .empty { text-align: center; color: var(--muted); font-size: 14px; padding: 30px 0; }
+
+/* ---------- 手动输入商品 ---------- */
+.sheet-tabs { margin-bottom: 10px; }
+
+.mode-pane { min-height: 0; display: flex; flex-direction: column; }
+.mode-pane[hidden] { display: none; }
+#modeList { flex: 1; }
+#modeManual { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
+.picker-list { flex: 1; }
+
+.manual-body { padding: 2px 2px 10px; }
+
+.manual-preview {
+  background: #fbf7f3;
+  border: 1px dashed #e2d3c8;
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin: 4px 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.manual-preview b {
+  font-size: 16px;
+  color: var(--ink);
+  word-break: break-all;
+}
+
+.recent-manual { margin-top: 14px; }
+.recent-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.recent-manual .chip {
+  margin: 0 6px 6px 0;
+  font-size: 12.5px;
+  padding: 6px 11px;
+}
 
 /* ---------- toast ---------- */
 .toast {
