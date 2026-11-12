@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>下单规则 · 早日发财有限公司</title>
+<meta name="theme-color" content="#faf6f2" />
+<link rel="icon" href="favicon.svg" />
+<link rel="stylesheet" href="app.css" />
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <div class="logo">📖</div>
+      <div>
+        <div class="title">下单规则</div>
+        <div class="sub">发群前看一遍，少返工</div>
+      </div>
+    </div>
+    <nav class="tabs">
+      <a href="index.html">开单</a>
+      <a href="products.html">商品表</a>
+      <a href="rules.html" class="active">规则</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="card" style="padding:10px 14px">
+    <div class="note">目录：<span id="toc" class="note"></span></div>
+  </div>
+
+  <section class="card doc" id="doc">
+    <p class="note">加载中…</p>
+  </section>
+
+  <div class="footer">
+    <a href="index.html">← 回到下单生成器</a>
+  </div>
+</main>
+
+<div class="bottombar">
+  <a class="btn primary big" href="index.html">去开单</a>
+</div>
+
+<script src="common.js"></script>
+<script>
+(async function () {
+  const doc = document.getElementById("doc");
+  try {
+    const res = await fetch("rules-body.html", { cache: "no-cache" });
+    if (!res.ok) throw new Error(res.status);
+    doc.innerHTML = await res.text();
+
+    // 表格里「✕ 错误写法」那张表加个样式
+    doc.querySelectorAll("table").forEach((t) => {
+      const th = t.querySelector("th");
+      if (th && th.textContent.indexOf("✕") >= 0) t.classList.add("bad-table");
+    });
+
+    // 目录
+    const toc = document.getElementById("toc");
+    const hs = doc.querySelectorAll("h2");
+    toc.innerHTML = Array.from(hs)
+      .map((h, i) => {
+        const id = h.id || "h" + i;
+        h.id = id;
+        return '<a href="#' + id + '" style="margin-right:10px;white-space:nowrap">' +
+          h.textContent.replace(/^[一二三四五六七八九十]+、/, "") + "</a>";
+      })
+      .join("");
+  } catch (e) {
+    doc.innerHTML =
+      '<p class="note">规则正文没加载出来，刷新一下试试。</p>';
+  }
+})();
+</script>
+</body>
+</html>

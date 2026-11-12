@@ -1,0 +1,11 @@
+{
+  "name": "xiadan-moban",
+  "version": "1.0.0",
+  "private": true,
+  "description": "手机下单文案生成器 · xiadan.wandalink.com",
+  "scripts": {
+    "build:rules": "node scripts/build-rules.js",
+    "dev": "wrangler dev",
+    "deploy": "node scripts/build-rules.js && wrangler deploy"
+  }
+}

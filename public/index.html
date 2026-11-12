@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>下单生成器 · 早日发财有限公司</title>
+<meta name="description" content="手机下单文案生成器：选商品、填数量，自动生成微信群里能直接复制的【下单】格式。" />
+<meta name="theme-color" content="#faf6f2" />
+<link rel="icon" href="favicon.svg" />
+<link rel="stylesheet" href="app.css" />
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <div class="logo">🧶</div>
+      <div>
+        <div class="title">下单生成器</div>
+        <div class="sub">选一选，复制发群，不用背格式</div>
+      </div>
+    </div>
+    <nav class="tabs">
+      <a href="index.html" class="active">开单</a>
+      <a href="products.html">商品表</a>
+      <a href="rules.html">规则</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- 日期 -->
+  <section class="card">
+    <div class="row-head">
+      <h2>📅 下单日期</h2>
+      <button class="btn small ghost" id="todayBtn" type="button">用今天</button>
+    </div>
+    <input type="date" id="orderDate" />
+    <div class="note" style="margin-top:8px">
+      补昨天的单子也可以改日期，序号和作废都按这个日期算。
+    </div>
+  </section>
+
+  <!-- 商品行 -->
+  <div id="rows"></div>
+
+  <button class="btn block" id="addRow" type="button">＋ 再加一件商品</button>
+
+  <!-- 预览 -->
+  <section class="card" style="margin-top:12px">
+    <div class="card-head">
+      <h2>📋 生成结果</h2>
+      <span class="note" id="rowCount"></span>
+    </div>
+    <pre class="preview" id="preview">在这里填写上面的内容…</pre>
+    <div class="warn" id="warnBox"></div>
+  </section>
+
+  <!-- 改单助手 -->
+  <section class="card">
+    <details class="more">
+      <summary>🔧 改单助手（作废 / 更正）</summary>
+
+      <div class="fix-block">
+        <div class="fix-title">方式 A：作废某一行，然后重发</div>
+        <div class="grid2">
+          <div class="suffix">
+            <input type="text" id="voidSeq" inputmode="numeric" placeholder="1" />
+            <span>行号</span>
+          </div>
+          <button class="btn ghost" id="voidBtn" type="button">生成作废行</button>
+        </div>
+        <div class="fix-out">
+          <pre class="preview small" id="voidOut">作废 - 2026-11-12-1</pre>
+          <button class="icon-btn" data-copy="voidOut" type="button" title="复制">⧉</button>
+        </div>
+        <div class="note">行号 = 那条消息里的第几行（从 1 数），日期用上面选的日期。</div>
+      </div>
+
+      <div class="fix-block">
+        <div class="fix-title">方式 B：引用原消息，回复「更正」</div>
+        <div class="grid2">
+          <div class="suffix">
+            <input type="text" id="fixQty" inputmode="numeric" placeholder="2" />
+            <span>团</span>
+          </div>
+          <div class="suffix">
+            <input type="text" id="fixPrice" inputmode="numeric" placeholder="295000" />
+            <span>₫</span>
+          </div>
+        </div>
+        <div style="margin-top:10px">
+          <input type="text" id="fixPaid" inputmode="numeric" placeholder="已付金额（留空 = 不写付款）" />
+        </div>
+        <div class="fix-out">
+          <pre class="preview small" id="fixOut">更正 - 2团 - 295000 - 已付295000</pre>
+          <button class="icon-btn" data-copy="fixOut" type="button" title="复制">⧉</button>
+        </div>
+        <div class="note">一定要长按原消息 → 引用 → 再发，日期才会沿用原来那天。</div>
+      </div>
+
+      <div class="fix-block">
+        <div class="fix-title">⚠️ 不要用「撤回」</div>
+        <div class="note">撤回后原内容直接消失，程序读不到，也改不了。</div>
+      </div>
+    </details>
+  </section>
+
+  <div class="footer">
+    xiadan.wandalink.com · 早日发财有限公司<br />
+    第一次用？先看 <a href="rules.html">下单规则</a>
+  </div>
+</main>
+
+<div class="bottombar">
+  <button class="btn primary big" id="copyBtn" type="button">复制全部</button>
+  <button class="btn ghost icon-only" id="shareBtn" type="button" title="分享">↗</button>
+</div>
+
+<div class="sheet" id="sheet" hidden>
+  <div class="sheet-panel">
+    <div class="sheet-head">
+      <b>选商品</b>
+      <button type="button" id="sheetClose">关闭</button>
+    </div>
+    <input type="search" id="sheetSearch" placeholder="搜简称或色号，如 401 / 羊绒 / 琉璃" />
+    <div class="picker-list" id="pickerList"></div>
+  </div>
+</div>
+
+<script src="common.js"></script>
+<script src="products.js"></script>
+<script>
+(function () {
+  const { copyText, toast, fmt, todayISO, esc, digits } = window.XD;
+
+  const ALL = [];
+  window.PRODUCTS.forEach((g) =>
+    g.items.forEach((it) => ALL.push(Object.assign({ series: g.series }, it)))
+  );
+  const BY_SHORT = {};
+  ALL.forEach((it) => (BY_SHORT[it.short] = it));
+
+  const rowsEl = document.getElementById("rows");
+  const dateEl = document.getElementById("orderDate");
+  const previewEl = document.getElementById("preview");
+  const warnEl = document.getElementById("warnBox");
+  const rowCountEl = document.getElementById("rowCount");
+
+  const STORE_KEY = "xd_draft_v1";
+  const BUYER_KEY = "xd_buyers_v1";
+
+  let rows = [];
+  let seq = 0;
+
+  /* ---------- 买家记忆 ---------- */
+  function getBuyers() {
+    try {
+      return JSON.parse(localStorage.getItem(BUYER_KEY) || "[]");
+    } catch (e) {
+      return [];
+    }
+  }
+  function rememberBuyer(name) {
+    name = (name || "").trim();
+    if (!name) return;
+    let list = getBuyers().filter((x) => x !== name);
+    list.unshift(name);
+    localStorage.setItem(BUYER_KEY, JSON.stringify(list.slice(0, 40)));
+  }
+
+  /* ---------- 行 ---------- */
+  function stockBadge(it) {
+    if (!it) return "";
+    if (it.stock === null || it.stock === undefined) return "";
+    if (it.stock < 0) return '<span class="badge over">超卖待核实</span>';
+    if (it.stock === 0) return '<span class="badge out">已售罄</span>';
+    return '<span class="badge ok">剩 ' + it.stock + " 团</span>";
+  }
+
+  function makeRow(data) {
+    const id = "r" + ++seq;
+    const el = document.createElement("section");
+    el.className = "card";
+    el.dataset.id = id;
+    el.innerHTML = `
+      <div class="row-head">
+        <span class="row-no">第 ${rows.length + 1} 件</span>
+        <button class="icon-btn" data-del type="button" title="删除这一行">✕</button>
+      </div>
+
+      <label class="field">
+        <span class="label">买家 <em>越南语原名，别写「宝」「姐」</em></span>
+        <input type="text" data-f="buyer" list="buyerList" placeholder="Trang Lê" autocomplete="off" />
+      </label>
+
+      <div class="field">
+        <span class="label">商品 <em>点开选，别手打</em></span>
+        <button class="product-btn" data-pick type="button">
+          <span class="pname">点这里选商品</span>
+          <span class="caret">▾</span>
+        </button>
+      </div>
+
+      <div class="grid2">
+        <label class="field">
+          <span class="label">数量</span>
+          <span class="suffix">
+            <input type="text" data-f="qty" inputmode="numeric" placeholder="2" autocomplete="off" />
+            <span>团</span>
+          </span>
+        </label>
+        <label class="field">
+          <span class="label">单价 <em>一团多少盾</em></span>
+          <span class="suffix">
+            <input type="text" data-f="price" inputmode="numeric" placeholder="295000" autocomplete="off" />
+            <span>₫</span>
+          </span>
+        </label>
+      </div>
+
+      <div class="field">
+        <span class="label">付款</span>
+        <div class="seg" data-seg>
+          <button type="button" data-pay="none">未付</button>
+          <button type="button" data-pay="part">已付</button>
+          <button type="button" data-pay="full">全款</button>
+        </div>
+        <div class="paid-wrap" hidden>
+          <input type="text" data-f="paid" inputmode="numeric" placeholder="已付多少盾，如 100000" autocomplete="off" />
+        </div>
+      </div>
+
+      <div class="row-sum"></div>
+    `;
+
+    el.querySelector("[data-del]").addEventListener("click", () => removeRow(id));
+    el.querySelector("[data-pick]").addEventListener("click", () => openPicker(id));
+    el.querySelectorAll("input[data-f]").forEach((inp) => {
+      inp.addEventListener("input", () => {
+        if (inp.dataset.f === "price" || inp.dataset.f === "paid") {
+          const d = digits(inp.value);
+          if (inp.value !== d) inp.value = d;
+        }
+        update();
+      });
+      inp.addEventListener("blur", () => {
+        if (inp.dataset.f === "buyer") rememberBuyer(inp.value);
+      });
+    });
+    el.querySelectorAll("[data-pay]").forEach((b) =>
+      b.addEventListener("click", () => {
+        el.dataset.pay = b.dataset.pay;
+        const wrap = el.querySelector(".paid-wrap");
+        wrap.hidden = b.dataset.pay !== "part";
+        if (b.dataset.pay !== "part") el.querySelector('[data-f="paid"]').value = "";
+        paintSeg(el);
+        update();
+      })
+    );
+
+    el.dataset.pay = (data && data.pay) || "none";
+    rowsEl.appendChild(el);
+    paintSeg(el);
+
+    const r = { id, el, product: (data && data.product) || "" };
+    rows.push(r);
+
+    if (data) {
+      el.querySelector('[data-f="buyer"]').value = data.buyer || "";
+      el.querySelector('[data-f="qty"]').value = data.qty || "";
+      el.querySelector('[data-f="price"]').value = data.price || "";
+      el.querySelector('[data-f="paid"]').value = data.paid || "";
+      el.querySelector(".paid-wrap").hidden = el.dataset.pay !== "part";
+      if (r.product) setProduct(r, r.product, true);
+    }
+    return r;
+  }
+
+  function paintSeg(el) {
+    const pay = el.dataset.pay || "none";
+    el.querySelectorAll("[data-pay]").forEach((b) =>
+      b.classList.toggle("on", b.dataset.pay === pay)
+    );
+  }
+
+  function removeRow(id) {
+    const i = rows.findIndex((r) => r.id === id);
+    if (i < 0) return;
+    rows[i].el.remove();
+    rows.splice(i, 1);
+    if (!rows.length) makeRow();
+    renumber();
+    update();
+  }
+
+  function renumber() {
+    rows.forEach((r, i) => {
+      r.el.querySelector(".row-no").textContent = "第 " + (i + 1) + " 件";
+    });
+  }
+
+  function setProduct(r, short, silent) {
+    const it = BY_SHORT[short];
+    r.product = short;
+    const btn = r.el.querySelector("[data-pick]");
+    const nameEl = btn.querySelector(".pname");
+    if (it) {
+      btn.classList.add("has");
+      nameEl.innerHTML =
+        esc(it.short) +
+        ' <small style="color:#8d7f78;font-weight:400">· ' +
+        esc(it.full) +
+        "</small>";
+      const badge = stockBadge(it);
+      let b = btn.parentElement.querySelector(".stock-badge");
+      if (!b) {
+        b = document.createElement("div");
+        b.className = "stock-badge";
+        b.style.marginTop = "6px";
+        btn.parentElement.appendChild(b);
+      }
+      b.innerHTML = badge;
+      if (!silent && it.set) {
+        const q = r.el.querySelector('[data-f="qty"]');
+        if (!q.value) q.value = String(it.set);
+      }
+    } else {
+      btn.classList.remove("has");
+      nameEl.textContent = "点这里选商品";
+      const b = btn.parentElement.querySelector(".stock-badge");
+      if (b) b.remove();
+    }
+    if (!silent) update();
+  }
+
+  /* ---------- 取值 ---------- */
+  function readRow(r) {
+    const el = r.el;
+    return {
+      buyer: el.querySelector('[data-f="buyer"]').value.trim(),
+      product: r.product,
+      qty: digits(el.querySelector('[data-f="qty"]').value),
+      price: digits(el.querySelector('[data-f="price"]').value),
+      pay: el.dataset.pay || "none",
+      paid: digits(el.querySelector('[data-f="paid"]').value),
+    };
+  }
+
+  function isBlank(d) {
+    return !d.buyer && !d.product && !d.qty && !d.price;
+  }
+
+  function amountOf(d) {
+    const it = BY_SHORT[d.product];
+    const q = Number(d.qty) || 0;
+    const p = Number(d.price) || 0;
+    if (it && it.set && q === it.set) return p; // 12团装按套卖
+    return q * p;
+  }
+
+  function payText(d) {
+    if (d.pay === "full") return "全款";
+    if (d.pay === "part" && d.paid) return "已付" + d.paid;
+    return "";
+  }
+
+  function lineOf(d) {
+    const parts = [d.buyer, d.product, d.qty ? d.qty + "团" : "", d.price];
+    const pt = payText(d);
+    if (pt) parts.push(pt);
+    return parts.join(" - ").replace(/ - (?= - )/g, " - ");
+  }
+
+  /* ---------- 渲染 ---------- */
+  function update() {
+    const date = dateEl.value || todayISO();
+    const lines = ["【下单】" + date];
+    const warns = [];
+    let done = 0;
+
+    rows.forEach((r, i) => {
+      const d = readRow(r);
+      if (isBlank(d)) {
+        r.el.querySelector(".row-sum").innerHTML = "";
+        return;
+      }
+
+      const missing = [];
+      if (!d.buyer) missing.push("买家");
+      if (!d.product) missing.push("商品");
+      if (!d.qty) missing.push("数量");
+      if (!d.price) missing.push("单价");
+
+      if (missing.length) {
+        warns.push(
+          "第 " + (i + 1) + " 件缺 " + missing.join("、") + "，这行没算进复制内容"
+        );
+      } else {
+        lines.push(lineOf(d));
+        done++;
+      }
+
+      const it = BY_SHORT[d.product];
+      if (it && it.stock === 0) {
+        warns.push("第 " + (i + 1) + " 件「" + d.product + "」已售罄，发之前先确认");
+      }
+      if (it && it.stock < 0) {
+        warns.push("第 " + (i + 1) + " 件「" + d.product + "」超卖待核实");
+      }
+      if (it && it.set && d.qty && Number(d.qty) !== it.set) {
+        warns.push("第 " + (i + 1) + " 件「" + d.product + "」是 " + it.set + " 团装，按套卖，数量写 " + it.set);
+      }
+      if (d.pay === "part" && !d.paid) {
+        warns.push("第 " + (i + 1) + " 件选了「已付」但没填金额");
+      }
+
+      // 行内小计
+      const amt = amountOf(d);
+      const paid = d.pay === "full" ? amt : Number(d.paid) || 0;
+      const due = Math.max(0, amt - paid);
+      let sum = "";
+      if (amt > 0) {
+        sum += '<span class="sum-amt">' + fmt(amt) + "₫</span>";
+        if (paid > 0) {
+          sum +=
+            '<span class="note">已付 ' +
+            fmt(paid) +
+            "</span>";
+        }
+        if (due > 0) {
+          sum += '<span class="sum-due">欠 ' + fmt(due) + "₫</span>";
+        } else if (paid >= amt) {
+          sum += '<span class="sum-due ok">已结清</span>';
+        }
+        if (it && it.set && Number(d.qty) === it.set) {
+          sum += '<span class="note">按 1 套算</span>';
+        }
+      }
+      r.el.querySelector(".row-sum").innerHTML = sum;
+    });
+
+    previewEl.textContent = done
+      ? lines.join("\n")
+      : "在这里填写上面的内容…";
+    warnEl.innerHTML = warns
+      .map((w) => '<div class="warn-line">⚠️ ' + esc(w) + "</div>")
+      .join("");
+    rowCountEl.textContent = done ? done + " 件商品" : "";
+
+    saveDraft();
+    updateFix();
+  }
+
+  function saveDraft() {
+    try {
+      const data = rows.map(readRow).filter((d) => !isBlank(d));
+      localStorage.setItem(
+        STORE_KEY,
+        JSON.stringify({ date: dateEl.value, rows: data })
+      );
+    } catch (e) {}
+  }
+
+  function loadDraft() {
+    try {
+      const raw = localStorage.getItem(STORE_KEY);
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /* ---------- 商品选择器 ---------- */
+  let pickTarget = null;
+  const sheet = document.getElementById("sheet");
+  const listEl = document.getElementById("pickerList");
+  const searchEl = document.getElementById("sheetSearch");
+
+  function openPicker(id) {
+    pickTarget = rows.find((r) => r.id === id) || null;
+    searchEl.value = "";
+    renderPicker("");
+    sheet.hidden = false;
+    document.body.style.overflow = "hidden";
+    setTimeout(() => searchEl.focus(), 60);
+  }
+
+  function closePicker() {
+    sheet.hidden = true;
+    document.body.style.overflow = "";
+    pickTarget = null;
+  }
+
+  function renderPicker(q) {
+    const kw = q.trim().toLowerCase();
+    let html = "";
+    let total = 0;
+    window.PRODUCTS.forEach((g) => {
+      const hits = g.items.filter((it) => {
+        if (!kw) return true;
+        return (
+          it.short.toLowerCase().includes(kw) ||
+          it.full.toLowerCase().includes(kw) ||
+          g.series.toLowerCase().includes(kw)
+        );
+      });
+      if (!hits.length) return;
+      total += hits.length;
+      html +=
+        '<div class="picker-series">' +
+        esc(g.series) +
+        " <span>" +
+        esc(g.hint || "") +
+        "</span></div>";
+      hits.forEach((it) => {
+        html +=
+          '<button class="picker-item" type="button" data-short="' +
+          esc(it.short) +
+          '"><span class="pi-main"><b>' +
+          esc(it.short) +
+          "</b><small>" +
+          esc(it.full) +
+          '</small></span><span class="pi-right">' +
+          stockBadge(Object.assign({}, it)) +
+          "</span></button>";
+      });
+    });
+    if (!total) html = '<div class="empty">没找到，换个词试试<br />（没有的商品先告诉老板加）</div>';
+    listEl.innerHTML = html;
+    listEl.querySelectorAll(".picker-item").forEach((b) =>
+      b.addEventListener("click", () => {
+        if (pickTarget) setProduct(pickTarget, b.dataset.short);
+        closePicker();
+      })
+    );
+  }
+
+  searchEl.addEventListener("input", () => renderPicker(searchEl.value));
+  document.getElementById("sheetClose").addEventListener("click", closePicker);
+  sheet.addEventListener("click", (e) => {
+    if (e.target === sheet) closePicker();
+  });
+
+  /* ---------- 改单助手 ---------- */
+  const voidSeq = document.getElementById("voidSeq");
+  const voidOut = document.getElementById("voidOut");
+  const fixQty = document.getElementById("fixQty");
+  const fixPrice = document.getElementById("fixPrice");
+  const fixPaid = document.getElementById("fixPaid");
+  const fixOut = document.getElementById("fixOut");
+
+  function updateFix() {
+    const date = dateEl.value || todayISO();
+    const n = digits(voidSeq.value) || "1";
+    voidOut.textContent = "作废 - " + date + "-" + n;
+
+    const q = digits(fixQty.value);
+    const p = digits(fixPrice.value);
+    const pd = digits(fixPaid.value);
+    const parts = ["更正"];
+    if (q) parts.push(q + "团");
+    if (p) parts.push(p);
+    if (pd) parts.push("已付" + pd);
+    fixOut.textContent = parts.length > 1 ? parts.join(" - ") : "更正 - 2团 - 295000 - 已付295000";
+  }
+
+  [voidSeq, fixQty, fixPrice, fixPaid].forEach((inp) => {
+    inp.addEventListener("input", () => {
+      if (inp !== voidSeq) {
+        const d = digits(inp.value);
+        if (inp.value !== d) inp.value = d;
+      }
+      updateFix();
+    });
+  });
+
+  document.querySelectorAll("[data-copy]").forEach((btn) =>
+    btn.addEventListener("click", async () => {
+      const el = document.getElementById(btn.dataset.copy);
+      const ok = await copyText(el.textContent);
+      toast(ok ? "已复制，去群里粘贴" : "复制失败，长按文字手动复制");
+    })
+  );
+
+  /* ---------- 底部按钮 ---------- */
+  document.getElementById("copyBtn").addEventListener("click", async () => {
+    const text = previewEl.textContent;
+    if (!text || text.indexOf("【下单】") !== 0) {
+      toast("先填点内容再复制");
+      return;
+    }
+    const ok = await copyText(text);
+    toast(ok ? "已复制，去群里粘贴 👍" : "复制失败，长按预览框手动复制");
+  });
+
+  document.getElementById("shareBtn").addEventListener("click", async () => {
+    const text = previewEl.textContent;
+    if (!text || text.indexOf("【下单】") !== 0) {
+      toast("先填点内容");
+      return;
+    }
+    if (navigator.share) {
+      try {
+        await navigator.share({ text });
+        return;
+      } catch (e) {}
+    }
+    const ok = await copyText(text);
+    toast(ok ? "已复制（这台手机不支持直接分享）" : "复制失败");
+  });
+
+  document.getElementById("addRow").addEventListener("click", () => {
+    const r = makeRow();
+    r.el.scrollIntoView({ behavior: "smooth", block: "center" });
+    setTimeout(() => r.el.querySelector('[data-f="buyer"]').focus(), 260);
+  });
+
+  document.getElementById("todayBtn").addEventListener("click", () => {
+    dateEl.value = todayISO();
+    update();
+  });
+
+  dateEl.addEventListener("change", update);
+
+  /* ---------- 买家候选 ---------- */
+  function renderBuyerList() {
+    let dl = document.getElementById("buyerList");
+    if (!dl) {
+      dl = document.createElement("datalist");
+      dl.id = "buyerList";
+      document.body.appendChild(dl);
+    }
+    dl.innerHTML = getBuyers()
+      .map((b) => '<option value="' + esc(b) + '"></option>')
+      .join("");
+  }
+
+  /* ---------- 启动 ---------- */
+  const draft = loadDraft();
+  dateEl.value = (draft && draft.date) || todayISO();
+  renderBuyerList();
+
+  if (draft && draft.rows && draft.rows.length) {
+    draft.rows.forEach((d) => makeRow(d));
+  } else {
+    makeRow();
+  }
+  update();
+})();
+</script>
+</body>
+</html>

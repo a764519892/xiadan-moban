@@ -1,0 +1,80 @@
+<h1 id="s0" class="section-anchor">微信群下单规则（v1）</h1>
+<blockquote><p>适用群：早日发财有限公司<br />目的：订单一目了然，自动进 Excel，不用再手工核对</p></blockquote>
+<h2 id="s2" class="section-anchor">一、下单格式（每天一条）</h2>
+<h3 id="s3" class="section-anchor">第 1 行：写日期</h3>
+<pre><code>【下单】2026-11-12</code></pre>
+<h3 id="s5" class="section-anchor">第 2 行起：每行一个商品</h3>
+<pre><code>买家 - 商品 - 数量 - 单价 - 付款</code></pre>
+<p><strong>用短横线 <code>-</code> 分隔</strong>（前后加空格更好读）</p>
+<h2 id="s8" class="section-anchor">二、五个字段怎么写</h2>
+<div class="table-scroll"><table><thead><tr><th>字段</th><th>怎么填</th><th>例子</th><th>说明</th></tr></thead><tbody><tr><td><strong>买家</strong></td><td>越南语原名</td><td><code>Trang Lê</code></td><td>别写「宝」「姐」这类称呼，写全名</td></tr><tr><td><strong>商品</strong></td><td>简称</td><td><code>十刻401晚秋</code></td><td>见下方对照表，不用写全称</td></tr><tr><td><strong>数量</strong></td><td>N团</td><td><code>2团</code></td><td>一定是「数字+团」</td></tr><tr><td><strong>单价</strong></td><td>一团多少钱</td><td><code>295000</code></td><td>越南盾，<strong>不写点号、不写总额</strong></td></tr><tr><td><strong>付款</strong></td><td>已付X 或 全款</td><td><code>已付295000</code></td><td>不写 = 未付款</td></tr></tbody></table></div>
+<h2 id="s10" class="section-anchor">三、完整示例</h2>
+<pre><code>【下单】2026-11-12
+Trang Lê - 十刻401晚秋 - 2团 - 295000 - 已付295000
+Trang Lê - 梵森03星月夜 - 1团 - 192000 - 已付100000
+Thuỳ Dương - 羊绒43 - 12团 - 1135000 - 已付250000
+Chi Chi - 十刻402 - 1团 - 295000 - 已付100000
+Nguyễn Dung - 十刻405 - 1团 - 295000 - 全款
+Bé Lê Diễm - 雪宝绒54 - 3团 - 50000</code></pre>
+<p>系统自动算出：</p>
+<div class="table-scroll"><table><thead><tr><th>买家</th><th>商品</th><th>数量</th><th class="num">单价</th><th class="num">金额</th><th class="num">已付</th><th class="num">欠</th></tr></thead><tbody><tr><td>Trang Lê</td><td>十刻401晚秋</td><td>2团</td><td class="num">295,000</td><td class="num">590,000</td><td class="num">295,000</td><td class="num"><strong>295,000</strong></td></tr><tr><td>Trang Lê</td><td>梵森03星月夜</td><td>1团</td><td class="num">192,000</td><td class="num">192,000</td><td class="num">100,000</td><td class="num"><strong>92,000</strong></td></tr><tr><td>Thuỳ Dương</td><td>羊绒43</td><td>12团</td><td class="num">1,135,000</td><td class="num"><strong>1,135,000</strong></td><td class="num">250,000</td><td class="num"><strong>885,000</strong></td></tr><tr><td>Chi Chi</td><td>十刻402</td><td>1团</td><td class="num">295,000</td><td class="num">295,000</td><td class="num">100,000</td><td class="num"><strong>195,000</strong></td></tr><tr><td>Nguyễn Dung</td><td>十刻405</td><td>1团</td><td class="num">295,000</td><td class="num">295,000</td><td class="num">295,000</td><td class="num">0</td></tr><tr><td>Bé Lê Diễm</td><td>雪宝绒54</td><td>3团</td><td class="num">50,000</td><td class="num">150,000</td><td class="num">0</td><td class="num"><strong>150,000</strong></td></tr></tbody></table></div>
+<h2 id="s14" class="section-anchor">四、✕ 这样发不行（会记录错误）</h2>
+<div class="table-scroll"><table><thead><tr><th>✕ 错误写法</th><th>问题</th></tr></thead><tbody><tr><td><code>Trang Lê 十刻300克（2团401晚秋+1团402单角兽）梵森300克（1团03星月夜）- 已付290.000vnd</code></td><td>一句话混了 2 个系列、多件商品，拆不清</td></tr><tr><td><code>Kim : 彤达100%羊毛 （212色号：5团，216色号：5团）330.000vnd</code></td><td>写了色号没写单价，只能靠总额摊，容易错</td></tr><tr><td><code>1团梵森300g（02单角兽）</code></td><td>少了买家名字，不知道谁买的</td></tr><tr><td><code>Trang Lê 剩 4团十刻（单叫兽，星月夜，晚秋，小橘）</code></td><td>「4团」+4 个色号，每色几团说不清</td></tr><tr><td><code>单价写 295.000</code>（带点号）</td><td>能用，但建议写 <code>295000</code> 更稳</td></tr></tbody></table></div>
+<h2 id="s16" class="section-anchor">五、发错了怎么改？</h2>
+<h3 id="s17" class="section-anchor">方式 A：作废 + 重发（推荐）</h3>
+<pre><code>【下单】2026-11-12
+Trang Lê - 十刻401晚秋 - 3团 - 295000 - 已付295000
+Chi Chi - 十刻402 - 1团 - 295000 - 已付100000
+作废 - 2026-11-12-1
+Trang Lê - 十刻401晚秋 - 2团 - 295000 - 已付295000</code></pre>
+<ul><li><strong>订单号 = 日期-序号</strong></li><li>序号 = 这条消息里的<strong>第几行</strong>（从 1 数）</li><li>上例中 <code>2026-11-12-1</code> 就是第 1 行（3 团那条），作废后重发 2 团的</li></ul>
+<h3 id="s20" class="section-anchor">方式 B：引用原消息 + 回复「更正」</h3>
+<pre><code>长按原来那条 → 引用 → 回复：
+
+更正 - 3团 - 295000 - 已付295000</code></pre>
+<p><strong>日期会自动沿用原日期</strong>，不会变成今天。</p>
+<p>例如引用 11-08 的单子今天改，记录还是 11-08。</p>
+<h3 id="s24" class="section-anchor">✕ 千万别用「撤回」</h3>
+<p>微信撤回后只保留一句「xx 撤回了一条消息」，<strong>原内容直接被删除</strong>。</p>
+<p>程序读不到原来写了什么，也无法知道改的是哪一条。</p>
+<p><strong>要改就用「作废」或「引用更正」。</strong></p>
+<h2 id="s28" class="section-anchor">六、日期怎么算</h2>
+<div class="table-scroll"><table><thead><tr><th>你做的操作</th><th>记录的日期</th></tr></thead><tbody><tr><td>正常发 <code>【下单】2026-11-12</code></td><td>2026-11-12</td></tr><tr><td>作废 + 重发（同一条消息）</td><td>消息里的日期</td></tr><tr><td><strong>引用 11-08 的旧消息回复「更正」</strong></td><td><strong>2026-11-08（原日期）</strong></td></tr><tr><td>引用但原消息已被删</td><td>今天的日期（会提示 ⚠）</td></tr><tr><td>单独发「更正」但没引用</td><td>无法处理 ✕</td></tr></tbody></table></div>
+<h2 id="s30" class="section-anchor">七、常见问题</h2>
+<p><strong>Q：同一天发两条【下单】可以吗？</strong></p>
+<p>可以。两条都会记录，日期相同，不冲突。</p>
+<p><strong>Q：一批货分几次付款怎么写？</strong></p>
+<p>每次收到钱就引用原单，回复：</p>
+<pre><code>更正 - 2团 - 295000 - 已付590000</code></pre>
+<p>把「已付」改成累计已付金额。</p>
+<p><strong>Q：客户退货怎么办？</strong></p>
+<p>作废那条，然后告诉我一声「退货」。我在 Excel 里用负数数量处理。</p>
+<p><strong>Q：商品表里没有怎么办？</strong></p>
+<p>先告诉我，我在【商品资料】里加，然后给你简称。</p>
+<p><strong>Q：12团装那种怎么算？</strong></p>
+<p><code>羊绒43</code> 是 12 团装，按<strong>套</strong>卖：</p>
+<pre><code>Thuỳ Dương - 羊绒43 - 12团 - 1135000 - 已付250000</code></pre>
+<p>金额 = <strong>1 套 × 1,135,000</strong>，不是 12 × 1,135,000。</p>
+<p>系统会自动识别，你照常写 12团 就行。</p>
+<h2 id="s46" class="section-anchor">八、商品简称对照表</h2>
+<h3 id="s47" class="section-anchor">十刻雪宝星系列</h3>
+<div class="table-scroll"><table><thead><tr><th>简称</th><th>说明</th></tr></thead><tbody><tr><td><code>十刻401晚秋</code></td><td>401 晚秋</td></tr><tr><td><code>十刻402独角兽</code></td><td>402 独角兽</td></tr><tr><td><code>十刻403星月夜</code></td><td>403 星月夜</td></tr><tr><td><code>十刻404橘子海</code></td><td>404 橘子海</td></tr><tr><td><code>十刻405小森林</code></td><td>405 小森林</td></tr></tbody></table></div>
+<h3 id="s49" class="section-anchor">梵森雪宝星（300g 带环形针）</h3>
+<div class="table-scroll"><table><thead><tr><th>简称</th><th>说明</th></tr></thead><tbody><tr><td><code>梵森02独角兽</code></td><td>02 独角兽</td></tr><tr><td><code>梵森03星月夜</code></td><td>03 星月夜</td></tr><tr><td><code>梵森05小森林</code></td><td>05 小森林</td></tr></tbody></table></div>
+<h3 id="s51" class="section-anchor">梵森雪宝绒</h3>
+<div class="table-scroll"><table><thead><tr><th>简称</th><th>色号</th></tr></thead><tbody><tr><td><code>雪宝绒51</code></td><td>51 深海幽蓝</td></tr><tr><td><code>雪宝绒53</code></td><td>53 加州日落</td></tr><tr><td><code>雪宝绒54</code></td><td>54 忘川河畔</td></tr><tr><td><code>雪宝绒55</code></td><td>55 海盐少女</td></tr><tr><td><code>雪宝绒57</code></td><td>57 墨染山水</td></tr><tr><td><code>雪宝绒58</code></td><td>58 月光宝盒</td></tr><tr><td><code>雪宝绒66</code></td><td>66 半塘暖橘</td></tr></tbody></table></div>
+<h3 id="s53" class="section-anchor">澳芙羊绒线</h3>
+<div class="table-scroll"><table><thead><tr><th>简称</th><th>色号</th></tr></thead><tbody><tr><td><code>羊绒17</code></td><td>17 浅灰色</td></tr><tr><td><code>羊绒18</code></td><td>18 中灰色</td></tr><tr><td><code>羊绒22</code></td><td>22 浅粉色</td></tr><tr><td><code>羊绒24</code></td><td>24 樱花粉</td></tr><tr><td><code>羊绒25</code></td><td>25 粉白花</td></tr><tr><td><code>羊绒26</code></td><td>26 橡皮红</td></tr><tr><td><code>羊绒32</code></td><td>32 玫红色</td></tr><tr><td><code>羊绒39</code></td><td>39 冰蓝色</td></tr><tr><td><code>羊绒43</code></td><td>43 雾蓝花（12团装，按套卖）</td></tr></tbody></table></div>
+<h3 id="s55" class="section-anchor">诚信编织</h3>
+<div class="table-scroll"><table><thead><tr><th>简称</th><th>说明</th></tr></thead><tbody><tr><td><code>290浅蓝216</code></td><td>290 中粗羊毛线 浅蓝 216</td></tr><tr><td><code>290浅豆绿212</code></td><td>290 中粗羊毛线 浅豆绿 212</td></tr><tr><td><code>雪球04</code></td><td>雪球冰条线 04 浅粉色</td></tr></tbody></table></div>
+<h3 id="s57" class="section-anchor">煜羊渐变纱线</h3>
+<div class="table-scroll"><table><thead><tr><th>简称</th><th>色号</th></tr></thead><tbody><tr><td><code>渐变02</code></td><td>02 海盐芝士</td></tr><tr><td><code>渐变03</code></td><td>03 桃桃莓莓</td></tr></tbody></table></div>
+<h3 id="s59" class="section-anchor">煜羊琉璃轻岚（长绒羽毛纱）</h3>
+<p><code>琉璃02</code> <code>琉璃03</code> <code>琉璃05</code> <code>琉璃06</code> <code>琉璃08</code> <code>琉璃09</code><br /><code>琉璃10</code> <code>琉璃11</code> <code>琉璃12</code> <code>琉璃13</code> <code>琉璃14</code> <code>琉璃24</code></p>
+<h2 id="s61" class="section-anchor">九、每天流程</h2>
+<ol><li><strong>发单</strong>：按上面格式发【下单】消息</li><li><strong>改单</strong>：作废 + 重发，或引用 + 更正</li><li><strong>导入</strong>：发完跟我说「导入」</li><li><strong>核对</strong>：我导出核对清单，你确认后定稿</li></ol>
+<h2 id="s63" class="section-anchor">十、当前库存快照（2026-11-12）</h2>
+<p><strong>还有货的：</strong></p>
+<div class="table-scroll"><table><thead><tr><th>商品</th><th class="num">剩余</th></tr></thead><tbody><tr><td>十刻402独角兽</td><td class="num">9 团</td></tr><tr><td>十刻403星月夜</td><td class="num">5 团</td></tr><tr><td>十刻401晚秋</td><td class="num">4 团</td></tr><tr><td>十刻405小森林</td><td class="num">4 团</td></tr><tr><td>十刻404橘子海</td><td class="num">2 团</td></tr><tr><td>梵森02独角兽</td><td class="num">1 团</td></tr><tr><td>雪球04</td><td class="num">1 团</td></tr></tbody></table></div>
+<p><strong>已售罄</strong>：其余全部（含所有羊绒、琉璃、雪宝绒）</p>
+<p><strong>⚠ 超卖</strong>：梵森03星月夜（进 2 卖 3，需核实）</p>
