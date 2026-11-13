@@ -83,7 +83,7 @@
             <input type="text" id="voidSeq" inputmode="numeric" placeholder="1" />
             <span>行号</span>
           </div>
-          <button class="btn ghost" id="voidBtn" type="button">生成作废行</button>
+          <button class="btn ghost" id="voidBtn" type="button">复制作废行</button>
         </div>
         <div class="fix-out">
           <pre class="preview small" id="voidOut">作废 - 2026-11-12-1</pre>
@@ -94,23 +94,50 @@
 
       <div class="fix-block">
         <div class="fix-title">方式 B：引用原消息，回复「更正」</div>
+
         <div class="grid2">
-          <div class="suffix">
-            <input type="text" id="fixQty" inputmode="numeric" placeholder="2" />
-            <span>团</span>
+          <label class="field" style="margin-bottom:0">
+            <span class="label">数量</span>
+            <span class="suffix">
+              <input type="text" id="fixQty" inputmode="numeric" placeholder="2" autocomplete="off" />
+              <span>团</span>
+            </span>
+          </label>
+          <label class="field" style="margin-bottom:0">
+            <span class="label">单价</span>
+            <span class="suffix">
+              <input type="text" id="fixPrice" inputmode="numeric" placeholder="295000" autocomplete="off" />
+              <span>₫</span>
+            </span>
+          </label>
+        </div>
+
+        <div class="field" style="margin-top:11px">
+          <span class="label">商品 <em>可选，12团装必须选，不然总价算不对</em></span>
+          <select id="fixProduct">
+            <option value="">（不确定 / 普通商品）</option>
+          </select>
+        </div>
+
+        <div class="field" style="margin-top:11px">
+          <span class="label">付款</span>
+          <div class="seg" id="fixSeg">
+            <button type="button" data-fixpay="none">未付</button>
+            <button type="button" data-fixpay="part">已付</button>
+            <button type="button" data-fixpay="full">全款</button>
           </div>
-          <div class="suffix">
-            <input type="text" id="fixPrice" inputmode="numeric" placeholder="295000" />
-            <span>₫</span>
+          <div class="paid-wrap" id="fixPaidWrap" hidden>
+            <input type="text" id="fixPaid" inputmode="numeric" placeholder="已付多少盾，如 100000" autocomplete="off" />
           </div>
         </div>
-        <div style="margin-top:10px">
-          <input type="text" id="fixPaid" inputmode="numeric" placeholder="已付金额（留空 = 不写付款）" />
-        </div>
+
         <div class="fix-out">
           <pre class="preview small" id="fixOut">更正 - 2团 - 295000 - 已付295000</pre>
           <button class="icon-btn" data-copy="fixOut" type="button" title="复制">⧉</button>
         </div>
+
+        <div class="totals" id="fixTotals" hidden></div>
+
         <div class="note">一定要长按原消息 → 引用 → 再发，日期才会沿用原来那天。</div>
       </div>
 
@@ -839,8 +866,30 @@
   const voidOut = document.getElementById("voidOut");
   const fixQty = document.getElementById("fixQty");
   const fixPrice = document.getElementById("fixPrice");
+  const fixProduct = document.getElementById("fixProduct");
+  const fixSeg = document.getElementById("fixSeg");
+  const fixPaidWrap = document.getElementById("fixPaidWrap");
   const fixPaid = document.getElementById("fixPaid");
   const fixOut = document.getElementById("fixOut");
+  const fixTotals = document.getElementById("fixTotals");
+
+  let fixPay = "none";
+
+  function paintFixSeg() {
+    fixSeg.querySelectorAll("[data-fixpay]").forEach((b) =>
+      b.classList.toggle("on", b.dataset.fixpay === fixPay)
+    );
+    fixPaidWrap.hidden = fixPay !== "part";
+  }
+
+  fixSeg.querySelectorAll("[data-fixpay]").forEach((b) =>
+    b.addEventListener("click", () => {
+      fixPay = b.dataset.fixpay;
+      if (fixPay !== "part") fixPaid.value = "";
+      paintFixSeg();
+      updateFix();
+    })
+  );
 
   function updateFix() {
     const date = dateEl.value || todayISO();
@@ -850,11 +899,44 @@
     const q = digits(fixQty.value);
     const p = digits(fixPrice.value);
     const pd = digits(fixPaid.value);
+
     const parts = ["更正"];
     if (q) parts.push(q + "团");
     if (p) parts.push(p);
-    if (pd) parts.push("已付" + pd);
-    fixOut.textContent = parts.length > 1 ? parts.join(" - ") : "更正 - 2团 - 295000 - 已付295000";
+
+    let payStr = "";
+    if (fixPay === "full") payStr = "全款";
+    else if (fixPay === "part" && pd) payStr = "已付" + pd;
+    if (payStr) parts.push(payStr);
+    else if (showSum) parts.push("未付");
+
+    // 算总价 / 已付 / 欠
+    const it = BY_SHORT[fixProduct.value];
+    const qn = Number(q) || 0;
+    const pn = Number(p) || 0;
+    let amt = qn * pn;
+    if (it && it.set && qn === it.set) amt = pn; // 12团装按套卖
+
+    const paid = fixPay === "full" ? amt : Number(pd) || 0;
+    const due = Math.max(0, amt - paid);
+
+    if (showSum && amt > 0) {
+      parts.push("总价" + amt + " 已付" + paid + " 欠" + due);
+    }
+
+    fixOut.textContent =
+      parts.length > 1 ? parts.join(" - ") : "更正 - 2团 - 295000 - 已付295000";
+
+    if (showSum && amt > 0) {
+      fixTotals.hidden = false;
+      fixTotals.innerHTML =
+        '<div class="tot-item"><span>总价</span><b>' + fmt(amt) + "₫</b></div>" +
+        '<div class="tot-item"><span>已付</span><b>' + fmt(paid) + "₫</b></div>" +
+        '<div class="tot-item due"><span>欠</span><b>' + fmt(due) + "₫</b></div>";
+    } else {
+      fixTotals.hidden = true;
+      fixTotals.innerHTML = "";
+    }
   }
 
   [voidSeq, fixQty, fixPrice, fixPaid].forEach((inp) => {
@@ -866,6 +948,34 @@
       updateFix();
     });
   });
+
+  fixProduct.addEventListener("change", updateFix);
+
+  document.getElementById("voidBtn").addEventListener("click", async () => {
+    const ok = await copyText(voidOut.textContent);
+    toast(ok ? "已复制作废行，粘贴到群里" : "复制失败，长按文字复制");
+  });
+
+  /* 商品下拉：简称 + 说明 */
+  fixProduct.innerHTML =
+    '<option value="">（不确定 / 普通商品）</option>' +
+    window.PRODUCTS.map(
+      (g) =>
+        '<optgroup label="' + esc(g.series) + '">' +
+        g.items
+          .map(
+            (it) =>
+              '<option value="' + esc(it.short) + '">' +
+              esc(it.short) +
+              " · " +
+              esc(it.full) +
+              "</option>"
+          )
+          .join("") +
+        "</optgroup>"
+    ).join("");
+
+  paintFixSeg();
 
   document.querySelectorAll("[data-copy]").forEach((btn) =>
     btn.addEventListener("click", async () => {
