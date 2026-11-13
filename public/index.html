@@ -53,7 +53,21 @@
       <h2>📋 生成结果</h2>
       <span class="note" id="rowCount"></span>
     </div>
+
+    <div class="sum-toggle">
+      <div>
+        <b>带上总价 / 已付 / 欠款</b>
+        <div class="note">打开后每行后面多一段「总价X 已付Y 欠Z」，客户一眼看清欠多少</div>
+      </div>
+      <button class="switch" id="sumToggle" type="button" role="switch" aria-checked="false">
+        <span></span>
+      </button>
+    </div>
+
     <pre class="preview" id="preview">在这里填写上面的内容…</pre>
+
+    <div class="totals" id="totals" hidden></div>
+
     <div class="warn" id="warnBox"></div>
   </section>
 
@@ -190,9 +204,15 @@
 
   const STORE_KEY = "xd_draft_v1";
   const BUYER_KEY = "xd_buyers_v1";
+  const SUM_KEY = "xd_withsum_v1";
 
   let rows = [];
   let seq = 0;
+  let showSum = true;
+  try {
+    const s = localStorage.getItem(SUM_KEY);
+    if (s === "0") showSum = false;
+  } catch (e) {}
 
   /* ---------- 买家记忆 ---------- */
   function getBuyers() {
@@ -443,11 +463,25 @@
     return "";
   }
 
-  function lineOf(d) {
+  /* 这一行的金额 / 已付 / 欠 */
+  function moneyOf(d) {
+    const amt = amountOf(d);
+    const paid = d.pay === "full" ? amt : Number(d.paid) || 0;
+    return { amt, paid, due: Math.max(0, amt - paid) };
+  }
+
+  function lineOf(d, withSum) {
     const parts = [d.buyer, d.product, d.qty ? d.qty + "团" : "", d.price];
     const pt = payText(d);
+    // 带小计时付款位一定写出来（没有就写「未付」），保证小计始终是第 6 段
     if (pt) parts.push(pt);
-    return parts.join(" - ").replace(/ - (?= - )/g, " - ");
+    else if (withSum) parts.push("未付");
+    const line = parts.join(" - ").replace(/ - (?= - )/g, " - ");
+    if (!withSum) return line;
+    const m = moneyOf(d);
+    if (m.amt <= 0) return line;
+    const tail = "总价" + m.amt + " 已付" + m.paid + " 欠" + m.due;
+    return line + " - " + tail;
   }
 
   /* ---------- 渲染 ---------- */
@@ -456,6 +490,9 @@
     const lines = ["【下单】" + date];
     const warns = [];
     let done = 0;
+    let sumAmt = 0;
+    let sumPaid = 0;
+    let sumDue = 0;
 
     rows.forEach((r, i) => {
       const d = readRow(r);
@@ -475,10 +512,9 @@
           "第 " + (i + 1) + " 件缺 " + missing.join("、") + "，这行没算进复制内容"
         );
       } else {
-        lines.push(lineOf(d));
+        lines.push(lineOf(d, showSum));
         done++;
       }
-
       const it = BY_SHORT[d.product];
       if (it && it.stock === 0) {
         warns.push("第 " + (i + 1) + " 件「" + d.product + "」已售罄，发之前先确认");
@@ -499,9 +535,15 @@
       }
 
       // 行内小计
-      const amt = amountOf(d);
-      const paid = d.pay === "full" ? amt : Number(d.paid) || 0;
-      const due = Math.max(0, amt - paid);
+      const m = moneyOf(d);
+      const amt = m.amt;
+      const paid = m.paid;
+      const due = m.due;
+      if (amt > 0) {
+        sumAmt += amt;
+        sumPaid += paid;
+        sumDue += due;
+      }
       let sum = "";
       if (amt > 0) {
         sum += '<span class="sum-amt">' + fmt(amt) + "₫</span>";
@@ -531,9 +573,42 @@
       .join("");
     rowCountEl.textContent = done ? done + " 件商品" : "";
 
+    renderTotals(sumAmt, sumPaid, sumDue, done);
+
     saveDraft();
     updateFix();
   }
+
+  const totalsEl = document.getElementById("totals");
+  const sumToggleEl = document.getElementById("sumToggle");
+
+  function renderTotals(amt, paid, due, done) {
+    if (!showSum || !done || amt <= 0) {
+      totalsEl.hidden = true;
+      totalsEl.innerHTML = "";
+      return;
+    }
+    totalsEl.hidden = false;
+    totalsEl.innerHTML =
+      '<div class="tot-item"><span>总价</span><b>' + fmt(amt) + "₫</b></div>" +
+      '<div class="tot-item"><span>已付</span><b>' + fmt(paid) + "₫</b></div>" +
+      '<div class="tot-item due"><span>欠</span><b>' + fmt(due) + "₫</b></div>";
+  }
+
+  function paintSumToggle() {
+    sumToggleEl.classList.toggle("on", showSum);
+    sumToggleEl.setAttribute("aria-checked", showSum ? "true" : "false");
+  }
+
+  sumToggleEl.addEventListener("click", () => {
+    showSum = !showSum;
+    try {
+      localStorage.setItem(SUM_KEY, showSum ? "1" : "0");
+    } catch (e) {}
+    paintSumToggle();
+    update();
+    toast(showSum ? "已带上总价 / 已付 / 欠款" : "已恢复纯下单格式");
+  });
 
   function saveDraft() {
     try {
@@ -866,6 +941,7 @@
   dateEl.value = (draft && draft.date) || todayISO();
   renderBuyerList();
   renderBrandList();
+  paintSumToggle();
 
   if (draft && draft.rows && draft.rows.length) {
     draft.rows.forEach((d) => makeRow(d));
