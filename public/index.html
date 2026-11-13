@@ -231,15 +231,10 @@
 
   const STORE_KEY = "xd_draft_v1";
   const BUYER_KEY = "xd_buyers_v1";
-  const SUM_KEY = "xd_withsum_v1";
 
   let rows = [];
   let seq = 0;
-  let showSum = true;
-  try {
-    const s = localStorage.getItem(SUM_KEY);
-    if (s === "0") showSum = false;
-  } catch (e) {}
+  let showSum = true; // 每次打开默认开（客户要求），关了只对当前页面有效
 
   /* ---------- 买家记忆 ---------- */
   function getBuyers() {
@@ -629,12 +624,13 @@
 
   sumToggleEl.addEventListener("click", () => {
     showSum = !showSum;
-    try {
-      localStorage.setItem(SUM_KEY, showSum ? "1" : "0");
-    } catch (e) {}
     paintSumToggle();
     update();
-    toast(showSum ? "已带上总价 / 已付 / 欠款" : "已恢复纯下单格式");
+    toast(
+      showSum
+        ? "已带上总价 / 已付 / 欠款"
+        : "本次已关，下次打开会重新开启"
+    );
   });
 
   function saveDraft() {
